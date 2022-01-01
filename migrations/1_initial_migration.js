@@ -1,12 +1,18 @@
 const Migrations = artifacts.require("Migrations");
-const Producer = artifacts.require("Producer");
-const Product = artifacts.require("Product");
-const Primary = artifacts.require("Primary");
 
-
-module.exports = function (deployer, networks, accounts ) {
+module.exports = async function (deployer, networks, accounts ) {
   deployer.deploy(Migrations);
-  deployer.deploy(Producer, 'name', 'desc');
-  deployer.deploy(Primary, 'priname', 'pridesc');
-  deployer.deploy(Product, 'proname', 'prodesc', [] );
 };
+
+// const Admin = artifacts.require("Admin");
+// const Producer = artifacts.require("Producer");
+// const Product = artifacts.require("Product");
+// const Primary = artifacts.require("Primary");
+
+
+// module.exports = async function (deployer, networks, accounts ) {
+// //   await deployer.deploy(Admin);
+//    await deployer.deploy(Producer,'','');
+//    await deployer.deploy(Primary,'','');
+//    await deployer.deploy(Product,'','',[]);
+// };
