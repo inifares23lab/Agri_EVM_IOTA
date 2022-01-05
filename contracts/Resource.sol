@@ -3,16 +3,7 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract Resource is Ownable {
-
-  string      _name;
-  string      _description;
-  uint32      _quantity;
-  string      _unitOfMeasure;
-  uint32      _minTimeInterval;
-  AgriEvent[] _agriEvents;  
-
-  enum Role {
+enum Role {
     disabled,
     farmer,
     agrifirm,
@@ -22,25 +13,48 @@ abstract contract Resource is Ownable {
     reseller
   }
 
+contract Resource is Ownable {
+
+  string        _name;
+  string        _description;
+  uint32        _quantity;
+  string        _unitOfMeasure;
+  uint32        _minTimeInterval;
+  AgriEvent[]   _agriEvents;  
+  address[]     _origins;
+  ResourceType  _resourceType;
+  
+  enum ResourceType {
+    primary,
+    product
+  }
+
   struct AgriEvent {
     uint dateTime;
     address registrant;
     string name;
-    bytes parameters;
+    string parameters;
   }
 
   address[] _roles;
-  mapping ( address => Role )       _authorized;
+  mapping ( address => Role ) _authorized;
   
     
-  event agriEvent (address indexed registrant, bytes20 indexed resource);
-
+  event agriEvent (address indexed registrant, address indexed resource);
+  
   constructor (
     string memory name,
-    string memory description
+    string memory description,
+    address[] memory origins
   ) Ownable() {
     _name = name;
     _description = description;
+    _origins = origins;
+    if (origins.length == 0){
+      _resourceType = ResourceType.primary;
+    } else {
+      _resourceType = ResourceType.product;
+    }
   }
   
   modifier onlyAuthorized() {
@@ -49,20 +63,49 @@ abstract contract Resource is Ownable {
   }
 
   modifier ifInRange( uint eventNr  ) {
-      // require(eventNr >= 0 || eventNr <= _agriEvents.length, "ERROR: The event number must be within range!");
+      require(eventNr >= 0 || eventNr <= _agriEvents.length, "ERROR: The event number must be within range!");
       _;
   }
 
-  function addAuthorized( address authAddr, Role role ) onlyOwner public {
+  function GetName ()
+    public
+    view 
+  returns ( string memory ) {
+    return _name;
+  }
+
+  function addAuthorized (
+    address authAddr,
+    Role role
+  ) onlyOwner
+    public {
     _authorized[authAddr] = role;
   }
 
-  function AddEvent( string memory name, bytes memory parameters ) onlyAuthorized public {
-    _agriEvents.push(AgriEvent( block.timestamp, msg.sender, name, parameters ));
-    // emit agriEvent( _msgSender(), address(this));
+  function getAuthorized (
+    address authAddress
+  ) public
+    view 
+  returns ( Role ) {
+    return _authorized[authAddress];
   }
 
-  function ReadEvent( uint eventNr  ) ifInRange ( eventNr ) public view returns ( AgriEvent memory ) {
+  function AddEvent (
+    string memory name,
+    string memory parameters
+  ) onlyAuthorized
+    public {
+    _agriEvents.push(AgriEvent( block.timestamp, msg.sender, name, parameters ));
+    emit agriEvent( msg.sender, address(this));
+  }
+    
+  function ReadEvent(
+    uint eventNr
+  ) ifInRange (
+    eventNr
+  ) public
+  view
+  returns ( AgriEvent memory) {
     return _agriEvents[eventNr];
   } 
 }
