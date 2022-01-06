@@ -23,7 +23,7 @@ contract Producer is Ownable {
   }
 
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || msg.sender == _account);
+    require(msg.sender == owner() || msg.sender == _account, "ERROR: not authorized");
     _;
   }
 

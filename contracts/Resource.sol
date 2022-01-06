@@ -60,11 +60,9 @@ contract Resource is Ownable {
   }
   
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled);
+    require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled, "ERROR: not authorized");
     _;
   }
-
-
 
   function AddQuantity(uint quantity) onlyAuthorized public {
     _quantity = _quantity + quantity;
@@ -112,7 +110,7 @@ contract Resource is Ownable {
 
   function AddOrigin (
     address originAddr
-  ) onlyOwner
+  ) onlyAuthorized
     public {
     _origins.push(originAddr);
   }
@@ -120,7 +118,7 @@ contract Resource is Ownable {
   function addAuthorized (
     address authAddr,
     Role role
-  ) onlyOwner
+  ) onlyAuthorized
     public {
     _authorized[authAddr] = role;
   }
