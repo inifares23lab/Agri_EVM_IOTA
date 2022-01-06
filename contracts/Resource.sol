@@ -17,7 +17,7 @@ contract Resource is Ownable {
 
   string        _name;
   string        _description;
-  uint32        _quantity;
+  uint          _quantity;
   string        _unitOfMeasure;
   uint32        _minTimeInterval;
   AgriEvent[]   _agriEvents;  
@@ -33,7 +33,7 @@ contract Resource is Ownable {
     uint dateTime;
     address registrant;
     string name;
-    string parameters;
+    bytes parameters;
   }
 
   address[] _roles;
@@ -45,10 +45,12 @@ contract Resource is Ownable {
   constructor (
     string memory name,
     string memory description,
+    string memory unitOfMeasure,
     address[] memory origins
   ) Ownable() {
     _name = name;
     _description = description;
+    _unitOfMeasure = unitOfMeasure;
     _origins = origins;
     if (origins.length == 0){
       _resourceType = ResourceType.primary;
@@ -62,9 +64,15 @@ contract Resource is Ownable {
     _;
   }
 
-  modifier ifInRange( uint eventNr  ) {
-      require(eventNr >= 0 || eventNr <= _agriEvents.length, "ERROR: The event number must be within range!");
-      _;
+
+
+  function AddQuantity(uint quantity) onlyAuthorized public {
+    _quantity = _quantity + quantity;
+  }
+
+  function RemoveQuantity(uint quantity) onlyAuthorized public {
+    require(_quantity - quantity >= 0, "Not enough quantity available");
+    _quantity = _quantity - quantity;
   }
 
   function GetName ()
@@ -72,6 +80,41 @@ contract Resource is Ownable {
     view 
   returns ( string memory ) {
     return _name;
+  }
+
+  function GetDescription ()
+    public
+    view 
+  returns ( string memory ) {
+    return _description;
+  }
+
+  function GetUnitOfMeasure ()
+    public
+    view 
+  returns ( string memory ) {
+    return _unitOfMeasure;
+  }
+
+  function GetQuantity ()
+    public
+    view 
+  returns ( uint ) {
+    return _quantity;
+  }
+
+  function GetOrigins ()
+    public
+    view 
+  returns ( address[] memory ) {
+    return _origins;
+  }
+
+  function AddOrigin (
+    address originAddr
+  ) onlyOwner
+    public {
+    _origins.push(originAddr);
   }
 
   function addAuthorized (
@@ -92,7 +135,7 @@ contract Resource is Ownable {
 
   function AddEvent (
     string memory name,
-    string memory parameters
+    bytes memory parameters
   ) onlyAuthorized
     public {
     _agriEvents.push(AgriEvent( block.timestamp, msg.sender, name, parameters ));
@@ -101,11 +144,10 @@ contract Resource is Ownable {
     
   function ReadEvent(
     uint eventNr
-  ) ifInRange (
-    eventNr
   ) public
-  view
+   view
   returns ( AgriEvent memory) {
+  require(eventNr >= 0 && eventNr < _agriEvents.length, "ERROR: The event number must be within range!");
     return _agriEvents[eventNr];
   } 
 }

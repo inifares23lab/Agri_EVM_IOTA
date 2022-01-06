@@ -7,26 +7,23 @@ contract Producer is Ownable {
   
   string    _name;
   string    _description;
-  address   _producerAccount;
+  address   _account;
   address[] _resources;
-  Role      _role;
 
   event addResourceEvent (address indexed addr, uint indexed, string name);
 
   constructor (
     string memory name,
     string memory description,
-    address account,
-    uint role
+    address account
   ) Ownable() {
     _name = name;
     _description = description;
-    _producerAccount = account;
-    _role = Role(role);
+    _account = account;
   }
 
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || msg.sender == _producerAccount);
+    require(msg.sender == owner() || msg.sender == _account);
     _;
   }
 
@@ -35,6 +32,20 @@ contract Producer is Ownable {
     view 
     returns (string memory) {
       return _name;
+    }
+
+  function GetDescription ()
+    public
+    view 
+    returns (string memory) {
+      return _description;
+    }
+    
+  function GetAccount ()
+    public
+    view 
+    returns (address) {
+      return _account;
     }
 
   function GetResources ()
@@ -47,26 +58,29 @@ contract Producer is Ownable {
   function CreateResource (
       string memory name,
       string memory description,
+      string memory unitOfMeasure,
+      uint quantity,
       address[] memory prevProd
   ) public
     onlyAuthorized {
-      Resource res = new Resource(name, description, prevProd);
-      AddResource(address(res));
-    //      for (uint i = 0; i > prevProd.length; i++) {
-    //        require(Resource._primaryResources[prevProd[i]]._producer == msg.sender);
-    //      }
+      Resource res = new Resource(name, description, unitOfMeasure, prevProd);
+      AddResource(address(res), uint(Role.farmer));
+      res.AddQuantity(quantity);
       emit addResourceEvent(msg.sender, _resources.length - 1, name);
   }
 
   function AddResource (
-      address resAddress
+      address resAddress,
+      uint    role
   ) public
     onlyAuthorized {
+      require(role >= 0 && role < 5, "role number not valid");
       _resources.push(resAddress);
-      Resource(resAddress).addAuthorized(_producerAccount, Role.farmer);
-    //      for (uint i = 0; i > prevProd.length; i++) {
-    //        require(Resource._primaryResources[prevProd[i]]._producer == msg.sender);
-    //      }
+      Resource res = Resource(resAddress);
+      res.addAuthorized(_account, Role(role));
+      if (res.owner() != address(this)) {
+        res.transferOwnership(address(this));
+      }
   }
 
   function GetResource (
@@ -77,11 +91,31 @@ contract Producer is Ownable {
     prim = _resources[resIndex];
   }
 
-  function changeProducer ( address newProducer, uint resourceIndex ) public onlyOwner {
+  function TransferQuantity(
+    address newAddress,
+    uint resourceIndex,
+    uint role,
+    uint quantity
+  ) onlyAuthorized
+  public {
     Resource res = Resource(_resources[resourceIndex]);
-    Producer(newProducer).AddResource(address(res));
-    // res.addAuthorized(newProducer, res._authorized[_producerAccount]);
-    res.addAuthorized(_producerAccount, Role.disabled);
+    res.RemoveQuantity(quantity);
+    Producer prod = Producer(newAddress);
+    prod.CreateResource(res.GetName(), res.GetDescription(), res.GetUnitOfMeasure(), quantity, res.GetOrigins());
+    res.addAuthorized(prod.GetAccount(), Role(role));
+    res.AddOrigin(address(res));
+  }
+
+  function ChangeProducer (
+    address newProducer,
+    uint resourceIndex,
+    uint role
+    ) public
+    onlyAuthorized {
+    Resource res = Resource(_resources[resourceIndex]);
+    Producer(newProducer).AddResource(address(res), role);
+    // res.addAuthorized(newProducer, res._authorized[_account]);
+    res.addAuthorized(_account, Role.disabled);
     _resources[resourceIndex] = address(0);
   }
   
