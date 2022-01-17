@@ -23,12 +23,18 @@ contract Resource is Ownable {
   AgriEvent[]   _agriEvents;  
   address[]     _origins;
   ResourceType  _resourceType;
+  ResourceState _resourceState;
   
   enum ResourceType {
     primary,
     product
   }
 
+  enum ResourceState {
+    pending,
+    stable
+  }
+  
   struct AgriEvent {
     uint dateTime;
     address registrant;
@@ -46,12 +52,15 @@ contract Resource is Ownable {
     string memory name,
     string memory description,
     string memory unitOfMeasure,
+    uint quantity,
     address[] memory origins
   ) Ownable() {
     _name = name;
     _description = description;
     _unitOfMeasure = unitOfMeasure;
+    _quantity = quantity;
     _origins = origins;
+    _resourceState = ResourceState.stable;
     if (origins.length == 0){
       _resourceType = ResourceType.primary;
     } else {
@@ -59,6 +68,11 @@ contract Resource is Ownable {
     }
   }
   
+  modifier onlyStable(){
+    require(_resourceState == ResourceState.stable, "ERROR: resource status is pending");
+    _;
+  }
+
   modifier onlyAuthorized() {
     require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled, "ERROR: not authorized");
     _;
@@ -113,6 +127,14 @@ contract Resource is Ownable {
   ) onlyAuthorized
     public {
     _origins.push(originAddr);
+  }
+
+
+  function setState (
+    uint state
+  ) onlyAuthorized
+    public {  
+    _resourceState = ResourceState(state);
   }
 
   function addAuthorized (
