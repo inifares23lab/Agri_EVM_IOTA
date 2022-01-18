@@ -42,6 +42,11 @@ contract Resource is Ownable {
     bytes parameters;
   }
 
+  struct CertifyingEvent {
+    AgriEvent baseEvent;
+    string link;
+  }
+
   address[] _roles;
   mapping ( address => Role ) _authorized;
   
@@ -78,13 +83,9 @@ contract Resource is Ownable {
     _;
   }
 
-  function AddQuantity(uint quantity) onlyAuthorized public {
-    _quantity = _quantity + quantity;
-  }
-
-  function RemoveQuantity(uint quantity) onlyAuthorized public {
-    require(_quantity - quantity >= 0, "Not enough quantity available");
-    _quantity = _quantity - quantity;
+  function SetQuantity(uint quantity) onlyAuthorized public {
+    require(quantity >= 0, "Cannot be negative");
+    _quantity =  quantity;
   }
 
   function GetName ()
@@ -156,16 +157,14 @@ contract Resource is Ownable {
   function AddEvent (
     string memory name,
     bytes memory parameters
-  ) onlyAuthorized
-    public {
+  ) onlyAuthorized public {
     _agriEvents.push(AgriEvent( block.timestamp, msg.sender, name, parameters ));
     emit agriEvent( msg.sender, address(this));
   }
     
   function ReadEvent(
     uint eventNr
-  ) public
-   view
+  ) public view
   returns ( AgriEvent memory) {
   require(eventNr >= 0 && eventNr < _agriEvents.length, "ERROR: The event number must be within range!");
     return _agriEvents[eventNr];

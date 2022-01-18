@@ -38,7 +38,7 @@ contract("TESTS", async function ( accounts ) {
     assert.equal(paramOut, param);
   })
 
-  it("add and read event from an added external certifier", async function () {
+  it("add and read event from an external certifier", async function () {
     await res0.addAuthorized(certAc, 3, {from : p1Ac});
     let param = JSON.stringify({ action: "certify origins", status: "OK" });
     let paramIn = "0x" + Buffer.from(param).toString('hex');
@@ -49,22 +49,16 @@ contract("TESTS", async function ( accounts ) {
   })
   
   it("change producer", async function () {
-    let initialQ = await res0.GetQuantity();
-    await p1.ChangeProducer(p2.address, 0, 1, {from: p1Ac});
-    await res0.AddQuantity(10, { from : p2Ac });
-    let newQ = await res0.GetQuantity();
+    let resAddress = await p1.GetResource(0);
+    let resource = await Resource.at(resAddress);
+    let initialQ = await resource.GetQuantity();
+    await p1.ChangeProducer(p2.address, resAddress, 1, {from: p1Ac});
+    await p2.AddToResources(resAddress, {from: p2Ac});
+    await resource.SetQuantity(Number(initialQ) + 10, { from : p2Ac });
+    let newQ = await resource.GetQuantity();
     assert.equal(Number(initialQ) + 10, Number(newQ));
-    assert.equal(p2.address, await res0.owner());
+    assert.equal(p2.address, await resource.owner());
   })
 
-  // it("add and read event from an added external certifier", async function () {
-  //   await res0.addAuthorized(certAc, 3, {from : p1Ac});
-  //   let param = JSON.stringify({ action: "certify origins", status: "OK" });
-  //   let paramIn = "0x" + Buffer.from(param).toString('hex');
-  //   await res0.AddEvent("first event", paramIn, {from: certAc});
-  //   let event1 = await res0.ReadEvent.call(1);
-  //   let paramOut = Buffer.from(event1[3].slice(2), 'hex').toString('utf8');
-  //   assert.equal(paramOut, param);
-  // })
-
+  
 });

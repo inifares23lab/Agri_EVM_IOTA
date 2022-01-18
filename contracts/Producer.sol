@@ -3,17 +3,19 @@ pragma solidity >=0.4.22 <0.9.0;
 pragma abicoder v2;
 
 import "./Resource.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract Producer is Ownable {
   
+  using Clones for Producer;
+
   string    _name;
   string    _description;
   address   _account;
   address[] _resources;
-  // mapping (uint => address) _resourceMap;
+  mapping (address => uint) _resourceMap;
 
   event AddResourceEvent (address indexed ownerAddr, address indexed addr);
-  event TransferResourceEvent (address indexed src, address indexed dest, address indexed res);
   event ChangeProducerEvent (address indexed src, address indexed dest, address indexed res);
 
   constructor (
@@ -79,106 +81,31 @@ contract Producer is Ownable {
       uint quantity,
       uint role,
       address[] memory prevProd
-  ) public onlyAuthorized roleInRange(role)
-  returns ( address ) {
+  ) public onlyAuthorized roleInRange(role) {
       Resource res = new Resource(name, description, unitOfMeasure, quantity, prevProd);
       res.addAuthorized(_account, Role(role));
-      _resources.push(address(res));
-      emit AddResourceEvent(address(this), address(res));
-      return address(res); 
+      AddToResources(address(res));
   }
-
-  // function TransferQuantity(
-  //   address newAddress,
-  //   uint resIndex,
-  //   uint role,
-  //   uint quantity
-  // ) public onlyAuthorized roleInRange(role)
-  // returns ( address ) {
-  //   // address resAddress = _resources[resIndex];
-  //   // Resource res = Resource(resAddress);
-  //   // Producer prod = Producer(newAddress);
-  //   // resAddress.call(bytes4(keccak256("RemoveQuantity(uint256)", quantity)));
-  //   // q
-  //   // address newResource = Clones.clone(resAddress);
-  //   // // Resource newRes = Resource(newResource);
-  //   // newResource.call(bytes4(keccak256("AddOrigin(address)", address(res))));
-  //   // newResource.call(bytes4(keccak256("RemoveQuantity(uint256)", _quantity)));
-  //   // newRes.addAuthorized(prod.GetAccount(), Role(role));    
-  //   // newRes.transferOwnership(newAddress);
-  //   // _resources.push(newResource);
-  //   // emit TransferResourceEvent(address(this), newAddress, newResource);
-  //   return address(0);
-  // }
 
   function ChangeProducer (
     address newProducer,
-    uint resIndex,
+    address resAddr,
     uint role
   ) public onlyAuthorized roleInRange(role) {
-    address resAddr = _resources[resIndex];
     Resource res = Resource(resAddr);
     Producer prod = Producer(newProducer);
     address prodAccont = prod.GetAccount();
     res.addAuthorized(prodAccont, Role.farmer);
     res.addAuthorized(_account, Role.disabled);
     res.transferOwnership(newProducer);
-    //HERE IT GOES OUT OF GAS
-    prod.AddToResources(resAddr);
-    _resources[resIndex] = address(0);
-
-    //ASSEMBLY NON SUCCESFUL TRY
-    // bytes memory addAuthSig = abi.encodeWithSignature("addAuthorized(address, Role)", prodAccont, Role.farmer);
-    // bytes memory removeAuthSig = abi.encodeWithSignature("addAuthorized(address, Role)", _account, Role.disabled);
-    // // Role farmerRole = Role.farmer;
-    // bytes memory transferOwnershipSig = abi.encodeWithSignature("transferOwnership(address)", newProducer);
-    // bytes memory addToResSig = abi.encodeWithSignature("AddToResources(address)");
-    // assembly {
-    //   {   
-    //     let x := mload(0x40)   //Find empty storage location using "free memory pointer"
-    //     mstore(x, addAuthSig) //Place signature at begining of empty storage 
-    //     // mstore(addAuthorized(x,0x04), prodAccont) //Place first argument directly next to signature
-    //     // mstore(addAuthorized(x,0x24), farmerRole) //Place second argument next to first, padded to 32 bytes
-    //     let success := call( 5000, res, 0, x, 32, x, 0x00)
-    //   }
-    //   {
-    //     let x := mload(0x40) 
-    //     mstore(x, removeAuthSig) //Place signature at begining of empty storage 
-    //     let success := call(5000, res, 0, x, 32, x, 0x00)
-    //   }
-    //   {
-    //     let x := mload(0x40)
-    //     mstore(x, transferOwnershipSig) //Place signature at begining of empty storage 
-    //     let success := call(5000, res, 0, x, 32, x, 0x00)
-    //   }
-    //   {
-    //     let x := mload(0x40)
-    //     mstore(x, addToResSig) //Place signature at begining of empty storage 
-    //     let success := call(5000, res, 0, x, 32, x, 0x00)
-    //   }
-    // }
-
-    //CALL NON SUCCESFUL TRY
-    // bool success;
-    // bytes memory result;
-    // emit TransferResourceEvent(address(this), newProducer, resAddress);
-    // (success, ) = res.call(abi.encodeWithSignature("addAuthorized(address, Role)", _account, Role.disabled));
-    // require(success, "disable authorization didn't work");
-    // (success, result) = newProducer.call(abi.encodeWithSignature("GetAccount()"));
-    // require(success, "Get account function didn't work");
-    // address prodAccont = abi.decode(result, (address));
-    // (success, ) = res.call(abi.encode("addAuthorized(address, Role)", prodAccont, Role.disabled));
-    // require(success, "add authorization didn't work"); 
-    // (success, ) = res.delegatecall(abi.encode("transferOwnership(address)", newProducer));
-    // require(success, "transfer ownership function didn't work"); 
-    // (success, ) = newProducer.delegatecall(abi.encode("AddToResources(address)", res));
-    // require(success, "add to resources function didn't work");
-    // _resources[resIndex] = address(0);
+    _resources[_resourceMap[resAddr]] = address(0);
+    emit ChangeProducerEvent(address(this), newProducer, resAddr);
   }
 
   function AddToResources(address res) 
   public onlyAuthorized {
     _resources.push(res);
+    emit AddResourceEvent(address(this), address(res));
   }
 
   function RmFromResources(uint index) 
