@@ -9,9 +9,7 @@ contract("TESTS", async function ( accounts ) {
   let p1,
       p2,
       res0,
-      res1,
-      res2,
-      res3;
+      res1;
 
   before("istantiate producers and resources", async function () {
     p1 = await Producer.new("one", "some desc ", p1Ac, {from: owner});
