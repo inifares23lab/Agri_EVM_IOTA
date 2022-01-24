@@ -1,5 +1,4 @@
 const Web3 = require("web3");
-const Tx = require('ethereumjs-tx');
 const assert = require("chai").assert;
  
 (async () => {
@@ -7,25 +6,20 @@ const assert = require("chai").assert;
   const ProducerJSON = require("../build/contracts/Producer.json");
   const ResourceJSON = require("../build/contracts/Resource.json"); 
  
-  const provider = "http://127.0.0.1:8545";
-
-  let ownerAccount = "0xF5DcAa8A14732F4E7911C368B5909FA0a4065231";
-  let p1Ac = "0xc8a0b5165885D6f7FA0CB4e1c9e11C44067EACA0";
-  let p2Ac = "0x91f548C5e51EE6AE4671197D57914Be792A551d2";
-  let certAc = "0x323d67A43845022791138fdefe5C8Ccc0Db90dD7";
-
-  let ownerKey = Buffer.from("d43a954287c8f63341d6068219a22d42bab160be06336b76aae78cd28f68198e", 'hex');
-  let p1Key = Buffer.from("88e6e24c646672c22427f39443dae0b18408edb6c88fc266ce8ebee026146240", "hex");
-  let p2Key = Buffer.from("847f20cd43c8cd88d1c8f5dec185a084eebd84773eccdddb6e583758e1a5aaa9", 'hex');
-  let certKey = Buffer.from("1b42955491c6aad84fd2e23520dc40f4123384be403a690f1de7265628217019", 'hex');
+  const provider = "http://127.0.0.1:7545";;
 
   let standardGas = 6000000;
 
 
   const web3 = await new Web3(provider);
 
-  let tx,
-      p1,
+  const accounts = await web3.eth.getAccounts();
+  const ownerAccount = accounts[0];
+  const p1Ac = accounts[1];
+  const p2Ac = accounts[2];
+  const certAc = accounts[3];
+  
+  let p1,
       p2,
       res0,
       res1;
@@ -45,19 +39,8 @@ const assert = require("chai").assert;
                                 gas: standardGas });
   
   console.log("Create First resource from first producer");
-  //RAW TRANSCTION
-  let encodedMethod = await p1.methods.CreateResource("first resource", "some desc ", "uOM", 100, 1, []).encodeABI();
-  tx = new Tx.Transaction({ to: p1._address,
-                            gas: standardGas,
-                            data : encodedMethod },{chain: 1074});
-
-  console.log("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111")
-  tx.sign(p1Key);
-  console.log("22222222222222222222222222222222222222222222222222222222222222222222222222222222222222")
-  await web3.eth.sendSignedTransaction("0x" + tx.serialize().toString('hex'));
-  console.log("??????????????????????????????????????????????????????????????????????????????????????")
-     
-
+  await p1.methods.CreateResource("first resource", "some desc ", "uOM", 100, 1, [])
+                  .send({from: p1Ac, gas: standardGas});
   let res0Address = await p1.methods.GetResource(0)
                                     .call();
   res0 = await new web3.eth.Contract(ResourceJSON.abi, res0Address);
