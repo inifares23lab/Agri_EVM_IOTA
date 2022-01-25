@@ -1,0 +1,29 @@
+#!/bin/sh
+ownerAccount="0xF5DcAa8A14732F4E7911C368B5909FA0a4065231";
+p1Ac="0xc8a0b5165885D6f7FA0CB4e1c9e11C44067EACA0";
+p2Ac="0x91f548C5e51EE6AE4671197D57914Be792A551d2";
+certAc="0x323d67A43845022791138fdefe5C8Ccc0Db90dD7";
+ownerKey="d43a954287c8f63341d6068219a22d42bab160be06336b76aae78cd28f68198e";
+p1Key="88e6e24c646672c22427f39443dae0b18408edb6c88fc266ce8ebee026146240";
+p2Key="847f20cd43c8cd88d1c8f5dec185a084eebd84773eccdddb6e583758e1a5aaa9";
+certKey="1b42955491c6aad84fd2e23520dc40f4123384be403a690f1de7265628217019";
+value=1000000000000000000000000
+
+wasp-cli init
+
+wasp-cli peering info
+
+pubkey=$(wasp-cli peering info | grep PubKey | cut -d':' -f2)
+netid=$(wasp-cli peering info | grep NetID | cut -d':' -f2)
+
+wasp-cli peering trust $pubkey $netid:4000
+
+wasp-cli request-funds
+
+wasp-cli chain deploy --committee=0 --quorum=1 --chain=agrievm --description="EVM Chain for agrifood traceability"
+
+wasp-cli chain deposit IOTA:100000
+
+wasp-cli chain evm deploy -a agrievm --alloc $ownerAccount:$value,$p1Ac:$value,$p2Ac:$value,$certAc:$value
+
+wasp-cli chain evm jsonrpc --chainid 1074 --account $ownerKey
