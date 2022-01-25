@@ -83,7 +83,7 @@ contract Producer is Ownable {
       address[] memory prevProd
   ) public onlyAuthorized roleInRange(role) {
       Resource res = new Resource(name, description, unitOfMeasure, quantity, prevProd);
-      res.addAuthorized(_account, Role(role));
+      res.addAuthorized(_account, role);
       AddToResources(address(res));
   }
 
@@ -95,8 +95,8 @@ contract Producer is Ownable {
     Resource res = Resource(resAddr);
     Producer prod = Producer(newProducer);
     address prodAccont = prod.GetAccount();
-    res.addAuthorized(prodAccont, Role.farmer);
-    res.addAuthorized(_account, Role.disabled);
+    res.addAuthorized(prodAccont, role);
+    res.addAuthorized(_account, 0);
     res.transferOwnership(newProducer);
     _resources[_resourceMap[resAddr]] = address(0);
     emit ChangeProducerEvent(address(this), newProducer, resAddr);

@@ -1,14 +1,15 @@
 {
   "scripts": {
-    "test": "node test/Agri_IOTA.web3.js",
-    "eth": "node test/Agri_ETH.web3.js",
-    "truffle": "truffle test test/standard.test.js"
+    "test": "mocha scripts/Agri_IOTA.ethers.js --timeout 10000",
+    "iota": "mocha scripts/Agri_IOTA.web3.js --timeout 10000",
+    "eth": "mocha scripts/Agri_ETH.ethers.js --timeout 10000"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.4.1",
     "chai": "^4.3.4",
     "ethereumjs-tx": "^2.1.2",
-    "mocha": "^9.1.4",
+    "ethers": "^5.5.3",
+    "mocha": "^9.2.0",
     "truffle-contract": "^4.0.31",
     "web3": "^1.7.0"
   }

@@ -23,16 +23,10 @@ contract Resource is Ownable {
   AgriEvent[]   _agriEvents;  
   address[]     _origins;
   ResourceType  _resourceType;
-  ResourceState _resourceState;
   
   enum ResourceType {
     primary,
     product
-  }
-
-  enum ResourceState {
-    pending,
-    stable
   }
   
   struct AgriEvent {
@@ -65,7 +59,6 @@ contract Resource is Ownable {
     _unitOfMeasure = unitOfMeasure;
     _quantity = quantity;
     _origins = origins;
-    _resourceState = ResourceState.stable;
     if (origins.length == 0){
       _resourceType = ResourceType.primary;
     } else {
@@ -73,8 +66,8 @@ contract Resource is Ownable {
     }
   }
   
-  modifier onlyStable(){
-    require(_resourceState == ResourceState.stable, "ERROR: resource status is pending");
+  modifier roleInRange(uint i) {
+    require(i >= 0 && i <= uint(type(Role).max), "ERROR role number out of range");
     _;
   }
 
@@ -130,26 +123,16 @@ contract Resource is Ownable {
     _origins.push(originAddr);
   }
 
-
-  function setState (
-    uint state
-  ) onlyAuthorized
-    public {  
-    _resourceState = ResourceState(state);
-  }
-
   function addAuthorized (
     address authAddr,
-    Role role
-  ) onlyAuthorized
-    public {
-    _authorized[authAddr] = role;
+    uint role
+  ) onlyAuthorized roleInRange(role) public {
+    _authorized[authAddr] = Role(role);
   }
 
   function getAuthorized (
     address authAddress
-  ) public
-    view 
+  ) public view 
   returns ( Role ) {
     return _authorized[authAddress];
   }
