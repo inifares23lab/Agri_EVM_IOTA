@@ -1,7 +1,6 @@
 {
   "scripts": {
     "test": "mocha scripts/Agri_IOTA.ethers.js --timeout 10000",
-    "iota": "mocha scripts/Agri_IOTA.web3.js --timeout 10000",
     "eth": "mocha scripts/Agri_ETH.ethers.js --timeout 10000"
   },
   "dependencies": {

@@ -15,14 +15,16 @@ enum Role {
 
 contract Resource is Ownable {
 
-  string        _name;
-  string        _description;
-  uint          _quantity;
-  string        _unitOfMeasure;
-  uint32        _minTimeInterval;
-  AgriEvent[]   _agriEvents;  
-  address[]     _origins;
-  ResourceType  _resourceType;
+  string        private _name;
+  string        private _description;
+  uint          private _quantity;
+  string        private _unitOfMeasure;
+  uint32        private _minTimeInterval;
+  AgriEvent[]   private _agriEvents;  
+  address[]     private _origins;
+  address[]     private _roles;
+  ResourceType  private _resourceType;
+  mapping ( address => Role ) private _authorized;
   
   enum ResourceType {
     primary,
@@ -35,15 +37,6 @@ contract Resource is Ownable {
     string name;
     bytes parameters;
   }
-
-  struct CertifyingEvent {
-    AgriEvent baseEvent;
-    string link;
-  }
-
-  address[] _roles;
-  mapping ( address => Role ) _authorized;
-  
     
   event agriEvent (address indexed registrant, address indexed resource);
   
@@ -66,60 +59,55 @@ contract Resource is Ownable {
     }
   }
   
+  function transferOwnership(
+    address newOwner
+  ) public override onlyOwnerOrUninitialized {
+    require(newOwner != address(0), "Ownable: new owner is the zero address");
+    _transferOwnership(newOwner);
+  }
+
+  modifier onlyOwnerOrUninitialized(){
+    require(owner() == msg.sender || owner() == address(0));
+    _;
+  }
+
   modifier roleInRange(uint i) {
-    require(i >= 0 && i <= uint(type(Role).max), "ERROR role number out of range");
+    require(i >= 0 && i <= uint(type(Role).max), 
+              "ERROR role number out of range");
     _;
   }
-
+  modifier eventInRange(uint eventNr) {
+    require(eventNr >= 0 && eventNr < _agriEvents.length, 
+              "ERROR: The event number must be within range!");
+    _;
+  }
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled, "ERROR: not authorized");
+    require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled,
+              "ERROR: not authorized");
+    _;
+  }
+  modifier onlyCertifiers() {
+    require(msg.sender == owner() || _authorized[msg.sender] != Role.disabled,
+              "ERROR: not authorized");
     _;
   }
 
-  function SetQuantity(uint quantity) onlyAuthorized public {
-    require(quantity >= 0, "Cannot be negative");
-    _quantity =  quantity;
+  function AddEvent (
+    string memory name,
+    bytes memory parameters
+  ) onlyAuthorized public {
+    _agriEvents.push(AgriEvent(block.timestamp, msg.sender, name, parameters));
+    emit agriEvent( msg.sender, address(this));
   }
 
-  function GetName ()
-    public
-    view 
-  returns ( string memory ) {
-    return _name;
-  }
-
-  function GetDescription ()
-    public
-    view 
-  returns ( string memory ) {
-    return _description;
-  }
-
-  function GetUnitOfMeasure ()
-    public
-    view 
-  returns ( string memory ) {
-    return _unitOfMeasure;
-  }
-
-  function GetQuantity ()
-    public
-    view 
-  returns ( uint ) {
-    return _quantity;
-  }
-
-  function GetOrigins ()
-    public
-    view 
-  returns ( address[] memory ) {
-    return _origins;
+  function SetQuantity(uint quantity)
+    onlyAuthorized public {
+    _quantity = quantity;
   }
 
   function AddOrigin (
     address originAddr
-  ) onlyAuthorized
-    public {
+  ) onlyAuthorized public {
     _origins.push(originAddr);
   }
 
@@ -129,27 +117,48 @@ contract Resource is Ownable {
   ) onlyAuthorized roleInRange(role) public {
     _authorized[authAddr] = Role(role);
   }
+    
+  function ReadEvent(
+    uint eventNr
+  ) public view eventInRange(eventNr)
+  returns ( AgriEvent memory) {
+    return _agriEvents[eventNr];
+  }
+
+  function GetName ()
+    public view 
+  returns ( string memory ) {
+    return _name;
+  }
+
+  function GetDescription ()
+    public view 
+  returns ( string memory ) {
+    return _description;
+  }
+
+  function GetUnitOfMeasure ()
+    public view 
+  returns ( string memory ) {
+    return _unitOfMeasure;
+  }
+
+  function GetQuantity ()
+    public view 
+  returns ( uint ) {
+    return _quantity;
+  }
+
+  function GetOrigins ()
+    public view 
+  returns ( address[] memory ) {
+    return _origins;
+  }
 
   function getAuthorized (
     address authAddress
   ) public view 
   returns ( Role ) {
     return _authorized[authAddress];
-  }
-
-  function AddEvent (
-    string memory name,
-    bytes memory parameters
-  ) onlyAuthorized public {
-    _agriEvents.push(AgriEvent( block.timestamp, msg.sender, name, parameters ));
-    emit agriEvent( msg.sender, address(this));
-  }
-    
-  function ReadEvent(
-    uint eventNr
-  ) public view
-  returns ( AgriEvent memory) {
-  require(eventNr >= 0 && eventNr < _agriEvents.length, "ERROR: The event number must be within range!");
-    return _agriEvents[eventNr];
   } 
 }

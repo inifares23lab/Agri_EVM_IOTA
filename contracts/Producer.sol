@@ -6,17 +6,18 @@ import "./Resource.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract Producer is Ownable {
-  
-  using Clones for Producer;
 
-  string    _name;
-  string    _description;
-  address   _account;
-  address[] _resources;
-  mapping (address => uint) _resourceMap;
+  string    private  _name;
+  string    private  _description;
+  address   private  _account;
+  address[] private  _resources;
+  mapping (address => uint) private _resourceMap;
 
-  event AddResourceEvent (address indexed ownerAddr, address indexed addr);
-  event ChangeProducerEvent (address indexed src, address indexed dest, address indexed res);
+  event AddResourceEvent (address indexed ownerAddr, 
+                          address indexed addr);
+  event ChangeProducerEvent ( address indexed src, 
+                              address indexed dest,
+                              address indexed res);
 
   constructor (
     string memory name,
@@ -29,18 +30,88 @@ contract Producer is Ownable {
   }
 
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || msg.sender == _account, addressToString(msg.sender));
+    require(msg.sender == owner() || msg.sender == _account,
+              "ERROR only authorized");
     _;
   }
 
+  function CreateResource (
+      string memory name,
+      string memory description,
+      string memory unitOfMeasure,
+      uint quantity,
+      uint role,
+      address[] memory prevProd
+  ) public onlyAuthorized roleInRange(role) {
+      Resource res = new Resource(name, description, unitOfMeasure, quantity, prevProd);
+      res.addAuthorized(_account, role);
+      AddToResources(address(res));
+  }
+
+  function ChangeProducer (
+    address newProducer,
+    address resAddr,
+    uint role
+  ) public onlyAuthorized roleInRange(role) {
+    Resource res = Resource(resAddr);
+    Producer prod = Producer(newProducer);
+    address prodAccont = prod.GetAccount();
+    res.addAuthorized(prodAccont, role);
+    res.addAuthorized(_account, 0);
+    res.transferOwnership(newProducer);
+    _resources[_resourceMap[resAddr]] = address(0);
+    emit ChangeProducerEvent(address(this), newProducer, resAddr);
+  }
+
+  function TransferQuantity (
+    address newProducer,
+    address resAddr,
+    bytes32 salt,
+    uint role,
+    uint quantity
+  ) public onlyAuthorized roleInRange(role) {
+    Resource oldRes = Resource(resAddr);
+    uint oldQuantity =oldRes.GetQuantity();
+    oldRes.SetQuantity(oldQuantity - quantity);
+    Resource res = Resource(Clones.cloneDeterministic(resAddr, salt));
+    res.transferOwnership(address(this));
+    Producer prod = Producer(newProducer);
+    address prodAccont = prod.GetAccount();
+    res.addAuthorized(prodAccont, role);
+    res.addAuthorized(_account, 0);
+    res.SetQuantity(quantity);
+    res.transferOwnership(newProducer);
+  }
+
   modifier roleInRange(uint i) {
-    require(i >= 0 && i <= uint(type(Role).max), "ERROR role number out of range");
+    require(i >= 0 && i <= uint(type(Role).max),
+              "ERROR role number out of range");
     _;
   }
 
   modifier resInRange(uint i) {
-    require(i >= 0 && i < _resources.length, "ERROR resource number out of range");
+    require(i >= 0 && i < _resources.length,
+              "ERROR resource number out of range");
     _;
+  }
+
+  function GetClonesAddress (
+    address resAddr,
+    bytes32 salt
+  ) public onlyAuthorized view
+  returns (address) {
+    return Clones.predictDeterministicAddress(resAddr, salt);
+  }
+
+  function AddToResources(address res) 
+  public onlyAuthorized {
+    _resources.push(res);
+    emit AddResourceEvent(address(this), address(res));
+  }
+
+  function RmFromResources(uint index) 
+  public onlyAuthorized {
+    _resources[index] = address(0);
   }
 
   function GetName ()
@@ -72,65 +143,5 @@ contract Producer is Ownable {
   public view 
   returns (address[] memory) {
     return _resources;
-  }
-
-  function CreateResource (
-      string memory name,
-      string memory description,
-      string memory unitOfMeasure,
-      uint quantity,
-      uint role,
-      address[] memory prevProd
-  ) public onlyAuthorized roleInRange(role) {
-      Resource res = new Resource(name, description, unitOfMeasure, quantity, prevProd);
-      res.addAuthorized(_account, role);
-      AddToResources(address(res));
-  }
-
-  function ChangeProducer (
-    address newProducer,
-    address resAddr,
-    uint role
-  ) public onlyAuthorized roleInRange(role) {
-    Resource res = Resource(resAddr);
-    Producer prod = Producer(newProducer);
-    address prodAccont = prod.GetAccount();
-    res.addAuthorized(prodAccont, role);
-    res.addAuthorized(_account, 0);
-    res.transferOwnership(newProducer);
-    _resources[_resourceMap[resAddr]] = address(0);
-    emit ChangeProducerEvent(address(this), newProducer, resAddr);
-  }
-
-  function AddToResources(address res) 
-  public onlyAuthorized {
-    _resources.push(res);
-    emit AddResourceEvent(address(this), address(res));
-  }
-
-  function RmFromResources(uint index) 
-  public onlyAuthorized {
-    _resources[index] = address(0);
-  }
-
-  function addressToString(address x) 
-  internal pure 
-  returns (string memory) {
-    bytes memory s = new bytes(40);
-    for (uint i = 0; i < 20; i++) {
-        bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
-        bytes1 hi = bytes1(uint8(b) / 16);
-        bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-        s[2*i] = char(hi);
-        s[2*i+1] = char(lo);            
-    }
-    return string(s);
-  }
-
-  function char(bytes1 b)
-  internal pure
-  returns (bytes1 c) {
-    if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
-    else return bytes1(uint8(b) + 0x57);
   }
 }

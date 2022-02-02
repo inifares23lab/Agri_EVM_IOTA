@@ -1,14 +1,14 @@
 {
   "chain": "agrievm",
   "chains": {
-    "agrievm": "ng4kTL4i1j8St6csyaWamkif6WzFC4XZrqopBQTuyBSZ"
+    "agrievm": "izm5gWvhYFaWXDYAF6WbtGyZnn5MD3dkNm9vwEw73i5M"
   },
   "goshimmer": {
     "api": "https://api.goshimmer.sc.iota.org",
     "faucetpowtarget": -1
   },
   "wallet": {
-    "seed": "5ihmNBgnicDAnSVRvT1Ei7Ry36u3wuXjrqVYKFxmKorQ"
+    "seed": "F7zgHCKgDLdBfwwNXeb37ZqsuoimvGP4d1S7d67exZxx"
   },
   "wasp": {
     "0": {
