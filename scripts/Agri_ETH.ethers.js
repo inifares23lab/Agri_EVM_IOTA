@@ -97,8 +97,6 @@ describe("Test Smart contracts for Agri food chain traceability on Ethereum", as
     let initialQ = await resourceP1.GetQuantity();
     let tx0 = await p1.ChangeProducer(p2.address, resourceP1.address, 1);
     let receipt0 = await tx0.wait();
-    let tx1 = await p2.AddToResources(resAddress);
-    let receipt1 = await tx1.wait();
     let resourceP2 = new ethers.Contract(resAddress, ResourceJSON.abi, p2Ac);
     let tx2 = await resourceP2.SetQuantity(Number(initialQ) + 10);
     let receipt2 = await tx2.wait();
@@ -106,7 +104,6 @@ describe("Test Smart contracts for Agri food chain traceability on Ethereum", as
     assert.equal(Number(initialQ) + 10, Number(newQ));
     assert.equal(p2.address, await resourceP2.owner());
     msg +=  "\nChange Producer\n\tGas Used: "+ Number(receipt0.gasUsed)+
-            "\nAdd to Resources\n\tGas Used: "+ Number(receipt1.gasUsed)+
             "\nSet quantity\n\tGas Used: "+ Number(receipt2.gasUsed);
   });
 
@@ -121,13 +118,10 @@ describe("Test Smart contracts for Agri food chain traceability on Ethereum", as
     let newResAddress = await p1.GetClonesAddress(resAddress, salt);
     let tx0 = await p1.TransferQuantity(p2.address, resourceP1.address, salt, 1, transferQuantity);
     let receipt0 = await tx0.wait();
-    let tx1 = await p2.AddToResources(newResAddress);
-    let receipt1 = await tx1.wait();
     let resourceP2 = new ethers.Contract(newResAddress, ResourceJSON.abi, p2Ac);
     assert.equal(Number(initialQ) - transferQuantity, Number(await resourceP1.GetQuantity()));
     assert.equal(transferQuantity, Number(await resourceP2.GetQuantity()));    
-    msg +=  "\nTransfer Quantity\n\tGas Used: "+ Number(receipt0.gasUsed)+
-            "\nAdd to Resources\n\tGas Used: "+ Number(receipt1.gasUsed);
+    msg +=  "\nTransfer Quantity\n\tGas Used: "+ Number(receipt0.gasUsed);
   });
 
   after("Read Events from events log", async () => {

@@ -30,8 +30,14 @@ contract Producer is Ownable {
   }
 
   modifier onlyAuthorized() {
-    require(msg.sender == owner() || msg.sender == _account,
+    require(msg.sender == owner() || msg.sender == _account || msg.sender == address(this),
               "ERROR only authorized");
+    _;
+  }
+
+  modifier onlySenderOrAuthorized(address res) {
+    require(Resource(res).owner() == msg.sender || msg.sender == owner() || msg.sender == _account || msg.sender == address(this),
+              "ERROR only sender or authorized");
     _;
   }
 
@@ -58,8 +64,9 @@ contract Producer is Ownable {
     address prodAccont = prod.GetAccount();
     res.addAuthorized(prodAccont, role);
     res.addAuthorized(_account, 0);
-    res.transferOwnership(newProducer);
     _resources[_resourceMap[resAddr]] = address(0);
+    prod.AddToResources(resAddr);
+    res.transferOwnership(newProducer);
     emit ChangeProducerEvent(address(this), newProducer, resAddr);
   }
 
@@ -80,6 +87,7 @@ contract Producer is Ownable {
     res.addAuthorized(prodAccont, role);
     res.addAuthorized(_account, 0);
     res.SetQuantity(quantity);
+    prod.AddToResources(address(res));
     res.transferOwnership(newProducer);
   }
 
@@ -104,7 +112,7 @@ contract Producer is Ownable {
   }
 
   function AddToResources(address res) 
-  public onlyAuthorized {
+  public onlySenderOrAuthorized (res) {
     _resources.push(res);
     emit AddResourceEvent(address(this), address(res));
   }
