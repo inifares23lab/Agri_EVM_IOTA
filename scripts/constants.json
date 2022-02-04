@@ -1,0 +1,9 @@
+{
+    "test0": "Create first resource",
+    "test1": "Create second resource",
+    "test2": "Add and read event from storage",
+    "test3": "Add external certifier to authorized accounts",
+    "test4": "Event from external certifier",
+    "test5": "Transfer resource from one producer to another",
+    "test6": "Transfer Quantity"
+}

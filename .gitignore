@@ -1,4 +1,10 @@
 node_modules
 .idea
 wasp-node/waspdb
+wasp-node/log
 build/contracts
+.vscode
+scripts/py
+scripts/sh
+Pipfile
+Pipfile.lock
