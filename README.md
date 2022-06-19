@@ -1,4 +1,4 @@
-# **Sample Agrifood Traceability Solution from Ethereum to IOTA v2**
+# **Sample Agrifood Traceability Solution and porting from Ethereum to IOTA v2**
 ## External Tools
 - wasp [https://github.com/iotaledger/wasp](https://github.com/iotaledger/wasp)
 - goshimmer [https://github.com/iotaledger/goshimmer](https://github.com/iotaledger/goshimmer)
